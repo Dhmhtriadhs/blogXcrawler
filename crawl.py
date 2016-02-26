@@ -22,7 +22,7 @@ class crawl(newcrawl.Ui_Dialog):
 		self.retranslateUi(dial)
 		
 		self.removeButton.clicked.connect(self.removeRule)
-		#self.targetBrowser
+		
 		self.runButton.clicked.connect(self.collectPages)
 		self.pageButton.clicked.connect(self.getPage)
 		self.pagerButton.clicked.connect(self.collectPages)
@@ -92,13 +92,11 @@ class crawl(newcrawl.Ui_Dialog):
 		titls = self.mframe.findAllElements(titles+" a")
 		for title in titls:
 			selida = [title.toPlainText(), title.attribute("href")]
-			print(selida)
 			self.selides.append(selida)
 		
 		
 		pages = self.mframe.findAllElements(page+" a")
 		for p in pages:
-			print(p.tagName())
 			self.sourceBrowser.setUrl(QtCore.QUrl(p.attribute("href")))
 			
 	def detable(self):
@@ -169,7 +167,7 @@ class crawl(newcrawl.Ui_Dialog):
 			self.currentRule[2]["el"] =  item.text(0)
 		
 		self.classComboBox.clear()
-		if item.text(1):
+		if item.text(1)!=None and item.text(1)!="None":
 			self.classComboBox.addItems(eval(item.text(1)))
 		self.updateTestLine()
 		
@@ -184,7 +182,6 @@ class crawl(newcrawl.Ui_Dialog):
 			if self.currentRule[1]["class"]:
 				lvl1 +="."+".".join(self.currentRule[1]["class"])
 			
-			
 		if self.currentRule[2]["el"]:
 			lvl1 = lvl1+" > " + self.currentRule[2]["el"]
 			if self.currentRule[2]["class"]:
@@ -192,7 +189,6 @@ class crawl(newcrawl.Ui_Dialog):
 		
 		self.rulesLineEdit.setText(lvl1)
 		
-	
 	def my_hook(self, d):
 		#print("progress",d.keys())
 		#print("status",d["status"])
@@ -208,10 +204,7 @@ class crawl(newcrawl.Ui_Dialog):
 		main = self.rulesLineEdit.text()
 		acc = ""
 		for element in self.mframe.findAllElements(main):
-			#element = elemen.clone()
 			acc += element.toOuterXml()
-		#self.targetBrowser.loadFinished.disconnect(self.pageReady)
-
 		self.targetBrowser.setHtml(acc)
 	
 	def getPage(self):
@@ -254,7 +247,6 @@ class crawl(newcrawl.Ui_Dialog):
 		elements = frame.findAllElements("title")
 		title = browser.url().toString().split("://")
 		if len(title)>1:
-			print(title)
 			title=title[1].replace("/","_").strip()
 		else:
 			title="title"
@@ -265,7 +257,6 @@ class crawl(newcrawl.Ui_Dialog):
 		
 	def testpage(self):
 		acc, main = "", ""
-		print("phase 1")
 		# Content Filter
 		row = self.ruleTableWidget.currentRow()
 		if row>-1:
@@ -281,16 +272,13 @@ class crawl(newcrawl.Ui_Dialog):
 							element.setOuterXml("")
 		else:
 			main = self.rulesLineEdit.text()
-		print("phase 2")
 		# Title extractor
 		title = self.getTitle(self.mframe, self.sourceBrowser)
-		print("phase 3")
 		# Image Filter
 		dr = title+"_files"
 		if not os.path.exists(dr):
 			os.mkdir(dr)
 		refer= self.readRefer(dr)
-		print("phase 4")
 		for elemen in self.mframe.findAllElements(main):
 			element = elemen.clone()
 			# Save images
@@ -327,33 +315,25 @@ class crawl(newcrawl.Ui_Dialog):
 				
 	def saveVideos(self, videos, refer, dr):
 		for video in videos:
-			print("phase 5.2")
 			video_src = video.attribute("src").split("?")[0]
-			print(video_src)
 			if video_src in refer:
-				print("phase 5.3")
 				new_src = refer[video_src]
 			else:
 				ydl_opts = {
 					'logger': MyLogger(),
 					'progress_hooks': [self.my_hook],
 				}
-				print("phase 5.4")
 				with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-					ydl.extract_info(video_src, download=True )# We just want to extract the info
+					ydl.extract_info(video_src, download=True )
 					#for k,v in result.items():
 						#print(k,"=",v)
 					#ydl.download([video_src])
-					print("phase 5.5")
 					old_src = video_src.split("/")[1]+".mp4"
 					new_src = os.path.join(dr, old_src)
 					if os.path.exists(old_src):
 						os.rename(old_src, new_src)
-					print("phase 5.6")
 					refer[video_src] = new_src
-			print("phase 5.7")
 			video.setOuterXml('<video width="320" height="240" controls src="'+new_src+'"></video>')
-			print("phase 5.8")
 						
 	def saveImages(self, images, refer, dr):
 		for image in images:
@@ -380,7 +360,8 @@ class crawl(newcrawl.Ui_Dialog):
 		self.treeWidget.clear()
 		header = []
 		for i in soup.contents:
-			#print(i.get('class'))
+			if i.name == None:
+				continue
 			item = QtWidgets.QTreeWidgetItem([i.name,str(i.get('class'))])
 			for z in i.contents:
 				try:
